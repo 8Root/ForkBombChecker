@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Zip Bomb Detector</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-now-ui-kit@1.1.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      h1 {
+        margin-bottom: 20px;
+      }
+      .result {
+        font-weight: bold;
+        margin-top: 10px;
+      }
+      .filesize {
+        margin-top: 10px;
+      }
+      .filesize strong {
+        font-weight: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h1 class="text-center mb-4">Zip Bomb Detector</h1>
+      <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <div class="input-group mb-3">
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="fileInput" name="file" accept=".zip" required>
+            <label class="custom-file-label" for="fileInput">Choose file</label>
+          </div>
+          <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">Check</button>
+          </div>
+        </div>
+      </form>
+      <div id="result" class="result alert alert-info"></div>
+      <div id="filesize" class="filesize"></div>
+    </div>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script>
+      const form = document.getElementById('uploadForm');
+      const resultDiv = document.getElementById('result');
+      const filesizeDiv = document.getElementById('filesize');
+      const fileInput = document.getElementById('fileInput');
+
+      fileInput.addEventListener('change', (event) => {
+        const fileName = event.target.files[0].name;
+        const fileSize = event.target.files[0].size;
+        const label = document.querySelector('.custom-file-label');
+        label.textContent = `${fileName} (${formatFileSize(fileSize)})`;
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const isZipBomb = data.isZipBomb;
+            const fileSize = file.size;
+
+            const resultText = isZipBomb ? `The file is a ZIP bomb.` : `The file is not a ZIP bomb.`;
+            resultDiv.textContent = resultText;
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+            resultDiv.textContent = 'An error occurred.';
+            filesizeDiv.textContent = 'Please try again later.';
+          });
+      });
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+    </script>
+  </body>
+</html>
